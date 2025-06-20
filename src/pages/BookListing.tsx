@@ -1,18 +1,34 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useBook } from '../context/BookContext';
 import BookCard from '../components/BookCard';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Search, Filter, Grid, List } from 'lucide-react';
+import { Search, Filter, Grid, List, Loader2 } from 'lucide-react';
 
 const BookListing = () => {
-  const { books, searchTerm, setSearchTerm, selectedGenre, setSelectedGenre } = useBook();
+  const { books, searchTerm, setSearchTerm, selectedGenre, setSelectedGenre, fetchBooks, loading, error } = useBook();
   const [sortBy, setSortBy] = useState('title');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 12;
+
+  // Fetch books when filters change
+  useEffect(() => {
+    const delayedFetch = setTimeout(() => {
+      fetchBooks({
+        search: searchTerm,
+        genre: selectedGenre,
+        sortBy: sortBy === 'title' ? 'title' : sortBy === 'author' ? 'author' : sortBy === 'rating' ? 'averageRating' : 'createdAt',
+        sortOrder: sortBy === 'rating' ? 'desc' : 'asc',
+        page: currentPage,
+        limit: booksPerPage
+      });
+    }, 500);
+
+    return () => clearTimeout(delayedFetch);
+  }, [searchTerm, selectedGenre, sortBy, currentPage, fetchBooks]);
 
   // Get unique genres
   const genres = useMemo(() => {
@@ -20,7 +36,7 @@ const BookListing = () => {
     return Array.from(genreSet).sort();
   }, [books]);
 
-  // Filter and sort books
+  // Filter and sort books (client-side as fallback)
   const filteredAndSortedBooks = useMemo(() => {
     let filtered = books.filter(book => {
       const matchesSearch = book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -68,6 +84,18 @@ const BookListing = () => {
     setSortBy('title');
     setCurrentPage(1);
   };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-slate-800 mb-4">Error Loading Books</h1>
+          <p className="text-slate-600 mb-4">{error}</p>
+          <Button onClick={() => fetchBooks()}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -166,16 +194,26 @@ const BookListing = () => {
           )}
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
+            <span className="ml-2 text-slate-600">Loading books...</span>
+          </div>
+        )}
+
         {/* Results Info */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-slate-600">
-            Showing {paginatedBooks.length} of {filteredAndSortedBooks.length} books
-            {currentPage > 1 && ` (Page ${currentPage} of ${totalPages})`}
-          </p>
-        </div>
+        {!loading && (
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-slate-600">
+              Showing {paginatedBooks.length} of {filteredAndSortedBooks.length} books
+              {currentPage > 1 && ` (Page ${currentPage} of ${totalPages})`}
+            </p>
+          </div>
+        )}
 
         {/* Books Grid/List */}
-        {paginatedBooks.length > 0 ? (
+        {!loading && paginatedBooks.length > 0 ? (
           <>
             <div className={`grid gap-6 mb-8 ${
               viewMode === 'grid' 
@@ -231,7 +269,7 @@ const BookListing = () => {
               </div>
             )}
           </>
-        ) : (
+        ) : !loading && (
           <div className="text-center py-12">
             <Filter className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-slate-800 mb-2">No books found</h3>

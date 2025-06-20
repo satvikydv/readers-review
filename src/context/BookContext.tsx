@@ -1,7 +1,9 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { apiService } from '../services/api';
 
 export interface Book {
+  _id: string;
   id: string;
   title: string;
   author: string;
@@ -11,24 +13,38 @@ export interface Book {
   averageRating: number;
   totalReviews: number;
   publishedYear: number;
+  createdBy?: {
+    _id: string;
+    name: string;
+  };
 }
 
 export interface Review {
+  _id: string;
   id: string;
   bookId: string;
-  userId: string;
+  userId: {
+    _id: string;
+    name: string;
+    avatar?: string;
+  };
   userName: string;
   rating: number;
   comment: string;
   date: string;
+  createdAt: string;
+  helpful?: number;
 }
 
 export interface User {
+  _id: string;
   id: string;
   name: string;
   email: string;
   joinDate: string;
   totalReviews: number;
+  bio?: string;
+  avatar?: string;
 }
 
 interface BookContextType {
@@ -37,142 +53,165 @@ interface BookContextType {
   currentUser: User | null;
   searchTerm: string;
   selectedGenre: string;
+  loading: boolean;
+  error: string | null;
   setSearchTerm: (term: string) => void;
   setSelectedGenre: (genre: string) => void;
-  addReview: (review: Omit<Review, 'id' | 'date'>) => void;
+  addReview: (review: Omit<Review, 'id' | 'date' | '_id' | 'userId' | 'userName' | 'createdAt'>) => Promise<void>;
   getBookById: (id: string) => Book | undefined;
   getReviewsByBookId: (bookId: string) => Review[];
   getUserReviews: (userId: string) => Review[];
+  fetchBooks: (params?: any) => Promise<void>;
+  fetchReviews: (bookId?: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, bio?: string) => Promise<void>;
+  logout: () => void;
 }
 
 const BookContext = createContext<BookContextType | undefined>(undefined);
 
-// Mock data
-const mockBooks: Book[] = [
-  {
-    id: '1',
-    title: 'The Midnight Library',
-    author: 'Matt Haig',
-    genre: 'Fiction',
-    summary: 'A magical library between life and death where each book represents a different life you could have lived.',
-    coverUrl: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&h=400&fit=crop',
-    averageRating: 4.2,
-    totalReviews: 1247,
-    publishedYear: 2020
-  },
-  {
-    id: '2',
-    title: 'Atomic Habits',
-    author: 'James Clear',
-    genre: 'Self-Help',
-    summary: 'A comprehensive guide to building good habits and breaking bad ones through tiny changes.',
-    coverUrl: 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=300&h=400&fit=crop',
-    averageRating: 4.6,
-    totalReviews: 2103,
-    publishedYear: 2018
-  },
-  {
-    id: '3',
-    title: 'The Seven Husbands of Evelyn Hugo',
-    author: 'Taylor Jenkins Reid',
-    genre: 'Romance',
-    summary: 'A reclusive Hollywood icon finally tells her story to an unknown journalist.',
-    coverUrl: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop',
-    averageRating: 4.8,
-    totalReviews: 3456,
-    publishedYear: 2017
-  },
-  {
-    id: '4',
-    title: 'Dune',
-    author: 'Frank Herbert',
-    genre: 'Science Fiction',
-    summary: 'A epic tale of politics, religion, and survival on the desert planet Arrakis.',
-    coverUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=400&fit=crop',
-    averageRating: 4.4,
-    totalReviews: 5632,
-    publishedYear: 1965
-  },
-  {
-    id: '5',
-    title: 'The Silent Patient',
-    author: 'Alex Michaelides',
-    genre: 'Thriller',
-    summary: 'A woman refuses to speak after murdering her husband, and a psychotherapist is determined to understand why.',
-    coverUrl: 'https://images.unsplash.com/photo-1515378791036-0648a814a23f?w=300&h=400&fit=crop',
-    averageRating: 4.1,
-    totalReviews: 2987,
-    publishedYear: 2019
-  },
-  {
-    id: '6',
-    title: 'Educated',
-    author: 'Tara Westover',
-    genre: 'Biography',
-    summary: 'A memoir about growing up in a survivalist family and the transformative power of education.',
-    coverUrl: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=300&h=400&fit=crop',
-    averageRating: 4.5,
-    totalReviews: 4321,
-    publishedYear: 2018
-  }
-];
-
-const mockReviews: Review[] = [
-  {
-    id: '1',
-    bookId: '1',
-    userId: '1',
-    userName: 'Sarah Johnson',
-    rating: 5,
-    comment: 'Absolutely beautiful and thought-provoking. Made me reflect on my own life choices.',
-    date: '2024-01-15'
-  },
-  {
-    id: '2',
-    bookId: '1',
-    userId: '2',
-    userName: 'Mike Chen',
-    rating: 4,
-    comment: 'Great concept and execution. Some parts felt a bit slow, but overall very engaging.',
-    date: '2024-01-10'
-  },
-  {
-    id: '3',
-    bookId: '2',
-    userId: '1',
-    userName: 'Sarah Johnson',
-    rating: 5,
-    comment: 'Life-changing! The 1% rule is so simple yet powerful. Already implementing these habits.',
-    date: '2024-01-05'
-  }
-];
-
-const mockUser: User = {
-  id: '1',
-  name: 'Sarah Johnson',
-  email: 'sarah@example.com',
-  joinDate: '2023-06-15',
-  totalReviews: 12
-};
-
 export const BookProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [books] = useState<Book[]>(mockBooks);
-  const [reviews, setReviews] = useState<Review[]>(mockReviews);
-  const [currentUser] = useState<User | null>(mockUser);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const addReview = (newReview: Omit<Review, 'id' | 'date'>) => {
-    const review: Review = {
-      ...newReview,
-      id: Math.random().toString(36).substring(7),
-      date: new Date().toISOString().split('T')[0]
+  // Initialize user from token
+  useEffect(() => {
+    const initializeUser = async () => {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        try {
+          const response = await apiService.getCurrentUser();
+          const user = response.user;
+          setCurrentUser({
+            ...user,
+            id: user._id,
+            joinDate: user.createdAt || user.joinDate
+          });
+        } catch (error) {
+          console.error('Failed to get current user:', error);
+          localStorage.removeItem('authToken');
+        }
+      }
     };
-    setReviews(prev => [review, ...prev]);
+
+    initializeUser();
+  }, []);
+
+  // Fetch books on mount
+  useEffect(() => {
+    fetchBooks();
+  }, []);
+
+  const fetchBooks = async (params = {}) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await apiService.getBooks(params);
+      const transformedBooks = response.books.map((book: any) => ({
+        ...book,
+        id: book._id
+      }));
+      setBooks(transformedBooks);
+    } catch (error) {
+      console.error('Error fetching books:', error);
+      setError('Failed to fetch books');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchReviews = async (bookId?: string) => {
+    try {
+      const params = bookId ? { bookId } : {};
+      const response = await apiService.getReviews(params);
+      const transformedReviews = response.reviews.map((review: any) => ({
+        ...review,
+        id: review._id,
+        userName: review.userId.name,
+        date: review.createdAt.split('T')[0]
+      }));
+      setReviews(transformedReviews);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      setError('Failed to fetch reviews');
+    }
+  };
+
+  const login = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await apiService.login(email, password);
+      const user = response.user;
+      setCurrentUser({
+        ...user,
+        id: user._id,
+        joinDate: user.createdAt || user.joinDate
+      });
+    } catch (error: any) {
+      setError(error.message || 'Login failed');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const register = async (name: string, email: string, password: string, bio?: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await apiService.register(name, email, password, bio);
+      const user = response.user;
+      setCurrentUser({
+        ...user,
+        id: user._id,
+        joinDate: user.createdAt || user.joinDate
+      });
+    } catch (error: any) {
+      setError(error.message || 'Registration failed');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = () => {
+    apiService.logout();
+    setCurrentUser(null);
+  };
+
+  const addReview = async (newReview: Omit<Review, 'id' | 'date' | '_id' | 'userId' | 'userName' | 'createdAt'>) => {
+    try {
+      const response = await apiService.createReview({
+        bookId: newReview.bookId,
+        rating: newReview.rating,
+        comment: newReview.comment
+      });
+      
+      const transformedReview = {
+        ...response.review,
+        id: response.review._id,
+        userName: response.review.userId.name,
+        date: response.review.createdAt.split('T')[0]
+      };
+      
+      setReviews(prev => [transformedReview, ...prev]);
+      
+      // Refresh books to update rating
+      await fetchBooks();
+    } catch (error: any) {
+      setError(error.message || 'Failed to add review');
+      throw error;
+    }
   };
 
   const getBookById = (id: string): Book | undefined => {
-    return books.find(book => book.id === id);
+    return books.find(book => book.id === id || book._id === id);
   };
 
   const getReviewsByBookId = (bookId: string): Review[] => {
@@ -180,7 +219,10 @@ export const BookProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const getUserReviews = (userId: string): Review[] => {
-    return reviews.filter(review => review.userId === userId);
+    return reviews.filter(review => 
+      review.userId._id === userId || 
+      (typeof review.userId === 'string' && review.userId === userId)
+    );
   };
 
   const value: BookContextType = {
@@ -189,12 +231,19 @@ export const BookProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     currentUser,
     searchTerm,
     selectedGenre,
+    loading,
+    error,
     setSearchTerm,
     setSelectedGenre,
     addReview,
     getBookById,
     getReviewsByBookId,
-    getUserReviews
+    getUserReviews,
+    fetchBooks,
+    fetchReviews,
+    login,
+    register,
+    logout
   };
 
   return (
