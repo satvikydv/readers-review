@@ -4,6 +4,8 @@ export const validateRequest = (schema) => {
   return (req, res, next) => {
     const { error } = schema.validate(req.body);
     if (error) {
+      console.log('Validation failed:', req.body); // Log incoming data
+      console.log('Validation details:', error.details); // Log specific Joi errors
       return res.status(400).json({
         message: 'Validation error',
         details: error.details.map(detail => detail.message)
@@ -58,9 +60,11 @@ export const schemas = {
   }),
 
   review: Joi.object({
+    bookId: Joi.string().required(),
     rating: Joi.number().min(1).max(5).required(),
     comment: Joi.string().min(10).max(2000).required()
   }),
+  
 
   userUpdate: Joi.object({
     name: Joi.string().min(2).max(50).optional(),

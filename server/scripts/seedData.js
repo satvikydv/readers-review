@@ -3,11 +3,13 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import Book from '../models/Book.js';
 import Review from '../models/Review.js';
+import { DB_NAME } from '../constants.js'
+
 import 'dotenv/config';
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/bookreview');
+    await mongoose.connect(`${process.env.MONGODB_URI}/${DB_NAME}`);
     console.log('MongoDB connected');
   } catch (error) {
     console.error('Database connection error:', error);
@@ -122,7 +124,8 @@ const seedData = async () => {
         publishedYear: 2018,
         pageCount: 334,
         createdBy: adminUser._id
-      }
+      },
+      
     ];
 
     const createdBooks = [];
