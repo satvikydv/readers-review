@@ -96,7 +96,7 @@ const BookListing = () => {
             </div>
 
             {/* Genre Filter */}
-            <Select value={selectedGenre} on onValueChange={setSelectedGenre}>
+            <Select value={selectedGenre} onValueChange={setSelectedGenre}>
               <SelectTrigger>
                 <SelectValue placeholder="All Genres" />
               </SelectTrigger>
