@@ -1,9 +1,8 @@
-
-const express = require('express');
-const User = require('../models/User');
-const Review = require('../models/Review');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { validateRequest, schemas } = require('../middleware/validation');
+import express from 'express';
+import User from '../models/User.js';
+import Review from '../models/Review.js';
+import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { validateRequest, schemas } from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -163,4 +162,4 @@ router.post('/:id/promote', authenticateToken, requireAdmin, async (req, res) =>
   }
 });
 
-module.exports = router;
+export default router;

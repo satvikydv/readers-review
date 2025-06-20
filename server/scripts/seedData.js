@@ -1,10 +1,9 @@
-
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const User = require('../models/User');
-const Book = require('../models/Book');
-const Review = require('../models/Review');
-require('dotenv').config();
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import User from '../models/User.js';
+import Book from '../models/Book.js';
+import Review from '../models/Review.js';
+import 'dotenv/config';
 
 const connectDB = async () => {
   try {
@@ -201,4 +200,4 @@ const runSeed = async () => {
   await seedData();
 };
 
-runSeed();
+await runSeed();

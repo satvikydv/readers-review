@@ -1,9 +1,8 @@
-
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const { validateRequest, schemas } = require('../middleware/validation');
-const { authenticateToken } = require('../middleware/auth');
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
+import { validateRequest, schemas } from '../middleware/validation.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -85,4 +84,4 @@ router.post('/refresh', authenticateToken, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

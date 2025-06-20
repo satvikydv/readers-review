@@ -1,17 +1,16 @@
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import 'dotenv/config';
 
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-require('dotenv').config();
-
-const authRoutes = require('./routes/auth');
-const bookRoutes = require('./routes/books');
-const reviewRoutes = require('./routes/reviews');
-const userRoutes = require('./routes/users');
-const errorHandler = require('./middleware/errorHandler');
+import authRoutes from './routes/auth.js';
+import bookRoutes from './routes/books.js';
+import reviewRoutes from './routes/reviews.js';
+import userRoutes from './routes/users.js';
+import errorHandler from './middleware/errorHandler.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -72,4 +71,4 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-module.exports = app;
+export default app;

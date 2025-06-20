@@ -1,8 +1,7 @@
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-
-const authenticateToken = async (req, res, next) => {
+export const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
@@ -31,14 +30,14 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-const requireAdmin = (req, res, next) => {
+export const requireAdmin = (req, res, next) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Admin access required' });
   }
   next();
 };
 
-const optionalAuth = async (req, res, next) => {
+export const optionalAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -54,10 +53,4 @@ const optionalAuth = async (req, res, next) => {
     // Continue without authentication
     next();
   }
-};
-
-module.exports = {
-  authenticateToken,
-  requireAdmin,
-  optionalAuth
 };

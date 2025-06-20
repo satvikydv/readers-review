@@ -1,7 +1,6 @@
+import Joi from 'joi';
 
-const Joi = require('joi');
-
-const validateRequest = (schema) => {
+export const validateRequest = (schema) => {
   return (req, res, next) => {
     const { error } = schema.validate(req.body);
     if (error) {
@@ -14,7 +13,7 @@ const validateRequest = (schema) => {
   };
 };
 
-const validateQuery = (schema) => {
+export const validateQuery = (schema) => {
   return (req, res, next) => {
     const { error } = schema.validate(req.query);
     if (error) {
@@ -28,7 +27,7 @@ const validateQuery = (schema) => {
 };
 
 // Schema definitions
-const schemas = {
+export const schemas = {
   register: Joi.object({
     name: Joi.string().min(2).max(50).required(),
     email: Joi.string().email().required(),
@@ -77,10 +76,4 @@ const schemas = {
     sortBy: Joi.string().valid('title', 'author', 'rating', 'createdAt').optional(),
     sortOrder: Joi.string().valid('asc', 'desc').optional()
   })
-};
-
-module.exports = {
-  validateRequest,
-  validateQuery,
-  schemas
 };

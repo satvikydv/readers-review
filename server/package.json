@@ -9,6 +9,7 @@
     "dev": "nodemon server.js",
     "test": "jest"
   },
+  "type": "module",
   "dependencies": {
     "express": "^4.18.2",
     "mongoose": "^7.5.0",

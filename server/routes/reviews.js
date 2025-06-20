@@ -1,10 +1,9 @@
-
-const express = require('express');
-const Review = require('../models/Review');
-const Book = require('../models/Book');
-const User = require('../models/User');
-const { authenticateToken, optionalAuth } = require('../middleware/auth');
-const { validateRequest, schemas } = require('../middleware/validation');
+import express from 'express';
+import Review from '../models/Review.js';
+import Book from '../models/Book.js';
+import User from '../models/User.js';
+import { authenticateToken, optionalAuth } from '../middleware/auth.js';
+import { validateRequest, schemas } from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -179,4 +178,4 @@ router.post('/:id/report', authenticateToken, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

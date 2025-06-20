@@ -1,8 +1,7 @@
-
-const express = require('express');
-const Book = require('../models/Book');
-const { authenticateToken, requireAdmin, optionalAuth } = require('../middleware/auth');
-const { validateRequest, validateQuery, schemas } = require('../middleware/validation');
+import express from 'express';
+import Book from '../models/Book.js';
+import { authenticateToken, requireAdmin, optionalAuth } from '../middleware/auth.js';
+import { validateRequest, validateQuery, schemas } from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -122,7 +121,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     }
 
     // Delete all reviews for this book
-    const Review = require('../models/Review');
+    const Review = (await import('../models/Review.js')).default;
     await Review.deleteMany({ bookId: req.params.id });
 
     res.json({ message: 'Book deleted successfully' });
@@ -134,7 +133,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
 // GET /api/books/:id/stats - Get book statistics
 router.get('/:id/stats', async (req, res) => {
   try {
-    const Review = require('../models/Review');
+    const Review = (await import('../models/Review.js')).default;
     const reviews = await Review.find({ bookId: req.params.id });
     
     const ratingDistribution = [1, 2, 3, 4, 5].map(rating => ({
@@ -156,4 +155,4 @@ router.get('/:id/stats', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
